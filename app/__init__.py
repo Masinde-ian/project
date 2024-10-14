@@ -1,7 +1,7 @@
 from flask import Flask
 app = Flask(__name__)
 
-from app import routes, models
+from app import routes
 
 # from flask_restful import Resource, Api
 # api = Api(app)

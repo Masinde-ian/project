@@ -1,0 +1,226 @@
+{% extends "layout.html" %}
+{% block content %}
+<div>
+    <div id="searchBar">
+        <h3>Search for Products below</h3>
+        <div id="searchBar2">
+            <input type="text">
+            <div id="search">
+                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="23" height="23" viewBox="0 0 24 24">
+                    <path d="M 9 2 C 5.1458514 2 2 5.1458514 2 9 C 2 12.854149 5.1458514 16 9 16 C 10.747998 16 12.345009 15.348024 13.574219 14.28125 L 14 14.707031 L 14 16 L 20 22 L 22 20 L 16 14 L 14.707031 14 L 14.28125 13.574219 C 15.348024 12.345009 16 10.747998 16 9 C 16 5.1458514 12.854149 2 9 2 z M 9 4 C 11.773268 4 14 6.2267316 14 9 C 14 11.773268 11.773268 14 9 14 C 6.2267316 14 4 11.773268 4 9 C 4 6.2267316 6.2267316 4 9 4 z"></path>
+                </svg>
+            </div>
+        </div>   
+    </div>
+    <div id="display2">
+        <div id="product">
+            <h3>PRODUCTS</h3>
+            <div id="container">
+                <div id="table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Product Id</th>
+                                <th>Product Name</th>
+                                <th>Product Price</th>
+                                <th>Instock</th>
+                                <th>Category Id</th>
+                              </tr>
+                        </thead>
+                        <tbody id="productList"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="input">
+                <h3>Input New Items in the inventory</h3>
+                <form action="" id="product-form" method="POST">
+                    <div class="label1">
+                        <label for="product-id">Product Id:</label>
+                        <input type="text" id="product-id">
+                    </div>
+                    <div class="label1">
+                        <label for="product-name">Product Name:</label>
+                        <input type="text" id="product-name">
+                    </div>
+                    <div class="label1">
+                        <label for="product-price">Product Price:</label>
+                        <input type="number" id="product-price">
+                    </div>
+                    <div class="label1">
+                        <label for="product-instock">Product Instock:</label>
+                        <input type="number" id="product-instock">
+                    </div>
+                    <div class="label1">
+                        <label for="category-id">Category Id:</label>
+                        <input type="text" id="category-id">
+                    </div>
+                    <button type="submit">Save</button>
+                </form>
+            </div>
+        </div>
+        <div id="category">
+            <h3>CATEGORY</h3>
+            <div id="container">
+                <div id="table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Category Id</th>
+                                <th>Category Name</th>
+                              </tr>
+                        </thead>
+                        <tbody id="categoryList"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="input">
+                <h3>Input New Items in the inventory</h3>
+                <form action="" id="category-form" method="POST">
+                    <div class="label1">
+                        <label for="category-id">Category Id:</label>
+                        <input type="number" id="cat-id">
+                    </div>
+                    <div class="label1">
+                        <label for="category-name">Category Name:</label>
+                        <input type="text" id="category-name">
+                    </div> 
+                    <button type="submit">Save</button>        
+                </form>
+            </div>
+        </div>
+        <script>
+            document.getElementById('product-form').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+        
+                const product_id = document.getElementById('product-id').value;
+                const product_name = document.getElementById('product-name').value;
+                const product_price = document.getElementById('product-price').value;
+                const product_instock = document.getElementById('product-instock').value;
+                const category_id = document.getElementById('category-id').value;
+        
+                const data = { product_id, product_name, product_price, product_instock, category_id };
+        
+                fetch('http://127.0.0.1:5000/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    // Clear form fields after successful submission
+                    this.reset();
+                    loadProducts(); // Reload the products
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            });
+        
+            function loadProducts() {
+                fetch('http://127.0.0.1:5000/products')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const productList = document.getElementById('productList');
+                        productList.innerHTML = ''; // Clear the existing product list
+        
+                        if (data.length === 0) {
+                            productList.innerHTML = '<tr><td colspan="5">No products found.</td></tr>';
+                            return;
+                        }
+        
+                        data.forEach(product => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${product.product_id}</td>
+                                <td>${product.product_name}</td>
+                                <td>Ksh ${product.product_price}</td>
+                                <td>${product.product_instock}</td>
+                                <td>${product.category_id}</td>
+                            `;
+                            productList.appendChild(row);
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        const productList = document.getElementById('productList');
+                        productList.innerHTML = '<tr><td colspan="5">Error loading products.</td></tr>';
+                    });
+            }
+        
+            loadProducts(); // Initial load of products
+        
+            document.getElementById('category-form').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+        
+                const category_id = document.getElementById('cat-id').value;
+                const category_name = document.getElementById('category-name').value;
+        
+                const data = { category_id, category_name };
+        
+                fetch('http://127.0.0.1:5000/categories', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    // Clear form fields after successful submission
+                    this.reset();
+                    loadCategories(); // Reload categories
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            });
+        
+            function loadCategories() {
+                fetch('http://127.0.0.1:5000/categories')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const categoryList = document.getElementById('categoryList');
+                        categoryList.innerHTML = ''; // Clear the existing category list
+        
+                        if (data.length === 0) {
+                            categoryList.innerHTML = '<tr><td colspan="2">No categories found.</td></tr>';
+                            return;
+                        }
+        
+                        data.forEach(category => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${category.category_id}</td>
+                                <td>${category.category_name}</td>
+                            `;
+                            categoryList.appendChild(row);
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        const categoryList = document.getElementById('categoryList');
+                        categoryList.innerHTML = '<tr><td colspan="2">Error loading categories.</td></tr>';
+                    });
+            }
+        
+            loadCategories(); // Initial load of categories
+        </script>
+        
+    </div>
+   
+</div>
+{% endblock %}

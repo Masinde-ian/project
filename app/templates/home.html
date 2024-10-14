@@ -31,10 +31,35 @@
     </div>
     <div id="graphics">
         <div id="graph">
-            Graph
+            <h3>CATEGORY</h3>
+            <div id="container">
+                <div id="table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Contact</th>
+                                <th>Country</th>
+                              </tr>
+                        </thead>
+                        <tbody id="saleList"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
         <div id="recSales">
-            Recent Sales
+            <h3>Input New Items in the inventory</h3>
+                <form action="" id="category-form" method="POST">
+                    <div class="label1">
+                        <label for="category-id">Category Id:</label>
+                        <input type="number" id="cat-id">
+                    </div>
+                    <div class="label1">
+                        <label for="category-name">Category Name:</label>
+                        <input type="text" id="category-name">
+                    </div> 
+                    <button type="submit">Save</button>        
+                </form>
         </div>
     </div>
     <div id="Message">
@@ -45,5 +70,74 @@
             </p>
         </div>
     </div>
+    <script>
+        document.getElementById('product-form').addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+        
+                const product_id = document.getElementById('product-id').value;
+                const product_name = document.getElementById('product-name').value;
+                const product_price = document.getElementById('product-price').value;
+                const product_instock = document.getElementById('product-instock').value;
+                const category_id = document.getElementById('category-id').value;
+        
+                const data = { product_id, product_name, product_price, product_instock, category_id };
+        
+                fetch('http://127.0.0.1:5000/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    // Clear form fields after successful submission
+                    this.reset();
+                    loadProducts(); // Reload the products
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            });
+        
+            function loadProducts() {
+                fetch('http://127.0.0.1:5000/products')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        const productList = document.getElementById('productList');
+                        productList.innerHTML = ''; // Clear the existing product list
+        
+                        if (data.length === 0) {
+                            productList.innerHTML = '<tr><td colspan="5">No products found.</td></tr>';
+                            return;
+                        }
+        
+                        data.forEach(product => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${product.product_id}</td>
+                                <td>${product.product_name}</td>
+                                <td>Ksh ${product.product_price}</td>
+                                <td>${product.product_instock}</td>
+                                <td>${product.category_id}</td>
+                            `;
+                            productList.appendChild(row);
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        const productList = document.getElementById('productList');
+                        productList.innerHTML = '<tr><td colspan="5">Error loading products.</td></tr>';
+                    });
+            }
+        
+            loadProducts(); // Initial load of products
+    </script>
 </div>
 {% endblock %}

@@ -143,3 +143,74 @@ footer{
 #alert p{
     font-size: 0.8rem;
 }
+table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+  
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+  
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+#display2{
+    display: grid;
+    grid-template-columns: auto auto auto auto;
+    gap: 10px;
+    margin: 5px;
+}
+#display2 h3{
+    text-align: center;
+    font-family: arial, sans-serif;
+}
+#product{
+    grid-column-start: 1;
+    grid-column-end: 4;
+}
+#category{
+    background-color: #f1f0f0;
+    padding: 5px;
+    
+}
+#container{
+    max-height: 100vh;
+    overflow-y: scroll;
+}
+/* #input{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 5px;
+} */
+.input form{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+.input button{
+    border: none;
+    background-color: rgb(17, 109, 194);
+    padding: 5px;
+    font-size: 1.2rem;
+    color: white;
+    font-weight: 600;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    width: 200px;
+}
+.input button:hover{
+    background-color: rgb(45, 120, 190);
+}
+.input button:active{
+    background-color: rgb(12, 97, 177);
+}
+.label1{
+    display: flex;
+    flex-direction: column;
+}
+.label1 label{
+    font-weight: 600;
+}
