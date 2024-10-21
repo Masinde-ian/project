@@ -1,34 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
 <div>
-    <div id="overview">
-        <div class="topCard">
-            <div class="icon"></div>
-            <span>TOTAL SALES</span>
-            <div></div>
-        </div>
-        <div class="topCard">
-            <div class="icon"></div>
-            <span>PAYMENTS</span>
-            <div></div>
-        </div>
-        <div class="topCard">
-            <div class="icon"></div>
-            <span>Stock</span>
-            <div></div>
-        </div>
-    </div>
-    <div id="searchBar">
-        <h3>Search for Products below</h3>
-        <div id="searchBar2">
-            <input type="text">
-            <div id="search">
-                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="23" height="23" viewBox="0 0 24 24">
-                    <path d="M 9 2 C 5.1458514 2 2 5.1458514 2 9 C 2 12.854149 5.1458514 16 9 16 C 10.747998 16 12.345009 15.348024 13.574219 14.28125 L 14 14.707031 L 14 16 L 20 22 L 22 20 L 16 14 L 14.707031 14 L 14.28125 13.574219 C 15.348024 12.345009 16 10.747998 16 9 C 16 5.1458514 12.854149 2 9 2 z M 9 4 C 11.773268 4 14 6.2267316 14 9 C 14 11.773268 11.773268 14 9 14 C 6.2267316 14 4 11.773268 4 9 C 4 6.2267316 6.2267316 4 9 4 z"></path>
-                </svg>
-            </div>
-        </div>   
-    </div>
     <div id="graphics">
         <div id="graph">
             <h3>CATEGORY</h3>
@@ -37,28 +9,29 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Company</th>
-                                <th>Contact</th>
-                                <th>Country</th>
+                                <th>Product Name</th>
+                                <th>price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
                               </tr>
                         </thead>
-                        <tbody id="saleList"></tbody>
+                        <tbody id="sales-List"></tbody>
                     </table>
                 </div>
             </div>
         </div>
         <div id="recSales">
-            <h3>Input New Items in the inventory</h3>
-                <form action="" id="category-form" method="POST">
+            <h3>Input Sales Information</h3>
+                <form action="" id="sale-form" method="POST">
                     <div class="label1">
-                        <label for="category-id">Category Id:</label>
-                        <input type="number" id="cat-id">
+                        <label for="product-name">Product:</label>
+                        <input type="text" id="product-name">
                     </div>
                     <div class="label1">
-                        <label for="category-name">Category Name:</label>
-                        <input type="text" id="category-name">
+                        <label for="product-quantity">Quantity:</label>
+                        <input type="number" id="product-quantity">
                     </div> 
-                    <button type="submit">Save</button>        
+                    <button type="submit">Sell</button>        
                 </form>
         </div>
     </div>
@@ -71,73 +44,123 @@
         </div>
     </div>
     <script>
-        document.getElementById('product-form').addEventListener('submit', function(event) {
-                event.preventDefault(); // Prevent the default form submission
-        
-                const product_id = document.getElementById('product-id').value;
-                const product_name = document.getElementById('product-name').value;
-                const product_price = document.getElementById('product-price').value;
-                const product_instock = document.getElementById('product-instock').value;
-                const category_id = document.getElementById('category-id').value;
-        
-                const data = { product_id, product_name, product_price, product_instock, category_id };
-        
-                fetch('http://127.0.0.1:5000/products', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data),
+        document.getElementById('sale-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+    
+            const product_name = document.getElementById('product-name').value;
+            const product_quantity = parseInt(document.getElementById('product-quantity').value);
+    
+            // Basic validation
+            if (!product_name || !product_quantity) {
+                alert('Please fill in all fields.');
+                return;
+            }
+    
+            const data = { product_name, product_quantity };
+    
+            fetch('http://127.0.0.1:5000/sales', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                alert('Sale recorded successfully!'); // User feedback on success
+                this.reset(); // Clear form fields
+                loadSale(); // Reload sales
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Error recording sale: ' + error.message); // User feedback on error
+            });
+        });
+    
+        function renderSaleRow(sale) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${sale.product_name}</td>
+                <td>Ksh ${sale.product_price.toFixed(2)}</td>
+                <td>${sale.product_quantity}</td>
+                <td>Ksh ${sale.total_paid.toFixed(2)}</td>
+            `;
+            return row;
+        }
+    
+        function loadSale() {
+            fetch('http://127.0.0.1:5000/sales')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
                 })
-                .then(response => response.json())
                 .then(data => {
-                    console.log('Success:', data);
-                    // Clear form fields after successful submission
-                    this.reset();
-                    loadProducts(); // Reload the products
+                    const saleList = document.getElementById('sales-List'); // Ensure this ID matches your HTML
+                    saleList.innerHTML = ''; // Clear the existing sales list
+    
+                    if (data.length === 0) {
+                        saleList.innerHTML = '<tr><td colspan="4">No sales found.</td></tr>';
+                        return;
+                    }
+    
+                    data.forEach(sale => {
+                        saleList.appendChild(renderSaleRow(sale)); // Use the render function
+                    });
                 })
                 .catch((error) => {
                     console.error('Error:', error);
+                    const saleList = document.getElementById('sales-List');
+                    saleList.innerHTML = '<tr><td colspan="4">Error loading sales.</td></tr>';
                 });
-            });
+        }
+    
+        loadSale(); // Initial load of sales
+    
+        // function loadSales() {
+        //         fetch('http://127.0.0.1:5000/sales')
+        //             .then(response => {
+        //                 if (!response.ok) {
+        //                     throw new Error('Network response was not ok');
+        //                 }
+        //                 return response.json();
+        //             })
+        //             .then(data => {
+        //                 const saleList = document.getElementById('sales-List');
+        //                 saleList.innerHTML = ''; // Clear the existing category list
         
-            function loadProducts() {
-                fetch('http://127.0.0.1:5000/products')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const productList = document.getElementById('productList');
-                        productList.innerHTML = ''; // Clear the existing product list
+        //                 if (data.length === 0) {
+        //                     saleList.innerHTML = '<tr><td colspan="2">No sales found.</td></tr>';
+        //                     return;
+        //                 }
         
-                        if (data.length === 0) {
-                            productList.innerHTML = '<tr><td colspan="5">No products found.</td></tr>';
-                            return;
-                        }
-        
-                        data.forEach(product => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${product.product_id}</td>
-                                <td>${product.product_name}</td>
-                                <td>Ksh ${product.product_price}</td>
-                                <td>${product.product_instock}</td>
-                                <td>${product.category_id}</td>
-                            `;
-                            productList.appendChild(row);
-                        });
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        const productList = document.getElementById('productList');
-                        productList.innerHTML = '<tr><td colspan="5">Error loading products.</td></tr>';
-                    });
-            }
-        
-            loadProducts(); // Initial load of products
+        //                 data.forEach(sale => {
+        //                     const row = document.createElement('tr');
+        //                     row.innerHTML = `
+        //                         <td>${sale.product_name}</td>
+        //                         <td>${sale.product_price}</td>
+        //                         <td>${sale.product_quantity}</td>
+        //                         <td>${sale.total_paid}</td>
+        //                     `;
+        //                     saleList.appendChild(row);
+        //                 });
+        //             })
+        //             .catch((error) => {
+        //                 console.error('Error:', error);
+        //                 const categoryList = document.getElementById('sales-List');
+        //                 categoryList.innerHTML = '<tr><td colspan="2">Error loading categories.</td></tr>';
+        //             });
+        //     }
+
+        //     loadSales()
     </script>
+    
 </div>
 {% endblock %}

@@ -7,6 +7,12 @@ def index():
 @app.route('/inventory')
 def inventory():
     return render_template('inventory.html')
+@app.route('/purchase')
+def purchase():
+    return render_template('purchase.html')
+@app.route('/sale')
+def sale():
+    return render_template('sales.html')
 # @app.route('/login')
 # @app.route('/report')
 # @app.route('/sales')

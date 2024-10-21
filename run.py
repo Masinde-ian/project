@@ -1,8 +1,7 @@
 #run.py
 from app import app
 import pymysql
-# if __name__ == "__main__":
-#     app.run(debug = True)
+from datetime import datetime
 
 from flask import Flask, jsonify, request
 from flask_restful import Resource, Api
@@ -70,6 +69,88 @@ class Product(Resource):
             return jsonify({'message': 'UPDATE FAILED'})
 api.add_resource(Product, '/products')
 
+class Order(Resource):
+
+    def get(self):
+        connection = pymysql.connect(host='localhost', user='root', password='',database='pos1')
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+        sql = "select * from purchase"
+        cursor.execute(sql)
+        if cursor.rowcount == 0:
+            return jsonify({'message': 'No Records'})
+        else:
+            products = cursor.fetchall()
+            return jsonify(products)
+
+    def post(self):
+        connection = pymysql.connect(host='localhost', user='root', password='', database='pos1')
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+
+        data = request.json
+        # Fetch the last purchase_id and increment it
+        sql = "SELECT MAX(purchase_id) AS max_purchase_id FROM purchase"
+        cursor.execute(sql)
+        last_purchase = cursor.fetchone()
+        purchase_id = (last_purchase['max_purchase_id'] + 1) if last_purchase['max_purchase_id'] is not None else 1  # Start from 1 if no records exist
+
+        # purchase_id = data['purchase_id']
+        product_name = data['product_name']
+
+        # Fetch product id based on product name
+        sql = "SELECT product_id FROM product WHERE product_name = %s"
+        cursor.execute(sql, (product_name,))
+        product = cursor.fetchone()
+        if not product:
+            connection.close()
+            return jsonify({'message': 'Product not found'}), 404
+        product_id = product['product_id']
+
+        quantity  = data['quantity']
+        unit_price = data['unit_price']
+        total_price = unit_price * quantity
+        # sale_date = datetime.now().strftime('%Y-%m-%d')
+        date_ordered = datetime.now().strftime('%Y-%m-%d')
+        # connection = pymysql.connect(host='localhost', user='root', password='',database='pos1')
+        # cursor = connection.cursor()
+        sql = "insert into purchase (purchase_id, product_name, product_id, quantity, unit_price, total_price, date_ordered) values(%s, %s, %s, %s, %s, %s, %s)"
+        try:
+            cursor.execute(sql, (purchase_id, product_name, product_id, quantity, unit_price, total_price, date_ordered))
+            connection.commit()
+            return jsonify({'message': 'POST SUCCESS. RECORD SAVED'})
+        except:
+            connection.rollback()
+            return jsonify({'Error: There was a problem'})
+
+    def delete(self):
+        data = request.json
+        purchase_id = data['purchase_id']
+        connection = pymysql.connect(host='localhost', user='root', password='',database='pos1')
+        cursor = connection.cursor()
+        sql = "delete from purchase where product_id = %s"
+        try:
+            cursor.execute(sql, (purchase_id))
+            connection.commit()
+            return jsonify({'message': 'DELETE SUCCESS'})
+        except:
+            connection.rollback()
+            return jsonify({'message': 'DELETE FAILED'})
+
+    def put(self):
+        data = request.json
+        purchase_id = data['purchase_id']
+        salary = data['salary']
+        connection = pymysql.connect(host='localhost', user='root', password='',database='pos1')
+        cursor = connection.cursor()
+        sql = "update purchase SET quantity = %s where purchase_id =%s"
+        try:
+            cursor.execute(sql, (product_instock, product_id))
+            connection.commit()
+            return jsonify({'message': 'UPDATE SUCCESS'})
+        except:
+            connection.rollback()
+            return jsonify({'message': 'UPDATE FAILED'})
+api.add_resource(Order, '/orders')
+
 class Category(Resource):
 
     def get(self):
@@ -129,59 +210,96 @@ class Category(Resource):
             return jsonify({'message': 'UPDATE FAILED'})
 api.add_resource(Category, '/categories')
 
-class Sale(Resource):
-
+class Sales(Resource):
     def get(self):
-        connection = pymysql.connect(host='localhost', user='root', password='',database='HyraxEmpDB')
+        connection = pymysql.connect(host='localhost', user='root', password='', database='pos1')
         cursor = connection.cursor(pymysql.cursors.DictCursor)
-        sql = "select * from sale"
+        sql = "SELECT * FROM sale"
         cursor.execute(sql)
-        if cursor.rowcount == 0:
+        sales = cursor.fetchall()
+        connection.close()
+        if not sales:
             return jsonify({'message': 'No Records'})
-        else:
-            products = cursor.fetchall()
-            return jsonify(products)
+        return jsonify(sales)
 
     def post(self):
         data = request.json
-        sale_id = data['sale_id']
         product_name = data['product_name']
-        product_id = data['product_id']
-        product_price = data['product_price']
         product_quantity = data['product_quantity']
-        total_paid = data['total_paid']
-        connection = pymysql.connect(host='localhost', user='root', password='',database='pos1')
-        cursor = connection.cursor()
-        sql = "insert into sale (sale_id, product_name, product_id, product_price, product_quantity, total_paid) values(%s, %s, %s, %s, %s, %s)"
+
+        # Fetch product price based on product name
+        connection = pymysql.connect(host='localhost', user='root', password='', database='pos1')
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
+        sql = "SELECT product_id, product_price, product_instock FROM product WHERE product_name = %s"
+        cursor.execute(sql, (product_name,))
+        product = cursor.fetchone()
+
+        if not product:
+            connection.close()
+            return jsonify({'message': 'Product not found'}), 404
+
+        product_id = product['product_id']
+        product_price = product['product_price']
+        total_paid = product_price * product_quantity
+
+        current_instock = product['product_instock']
+        new_instock = current_instock - product_quantity
+        # Update the product_instock if there is enough stock
+        if new_instock > 20:
+            update_sql = "UPDATE product SET product_instock = %s WHERE product_id = %s"
+            cursor.execute(update_sql, (new_instock, product_id))
+            return jsonify("Stock updated successfully!")
+        elif new_instock >=0:
+            update_sql = "UPDATE product SET product_instock = %s WHERE product_id = %s"
+            cursor.execute(update_sql, (new_instock, product_id))
+            return jsonify(f"Make sure to update your stock, you are left with: {current_instock}, instock")
+        else:
+            return jsonify(f"Insufficient stock for product_id {product_id}. Current stock: {current_instock}, attempted to reduce by {quantity}.")
+
+        # Fetch the last sale_id and increment it
+        sql = "SELECT MAX(sale_id) AS max_sale_id FROM sale"
+        cursor.execute(sql)
+        last_sale = cursor.fetchone()
+        sale_id = (last_sale['max_sale_id'] + 1) if last_sale['max_sale_id'] is not None else 1  # Start from 1 if no records exist
+
+        # Get the current timestamp
+        # current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        sale_date = datetime.now().strftime('%Y-%m-%d')
+
+        sql = "INSERT INTO sale (sale_id, product_name, product_id, product_price, product_quantity, total_paid, sale_date) VALUES (%s, %s, %s, %s, %s, %s, %s)"
         try:
-            cursor.execute(sql, (sale_id, product_name, product_id, product_price, product_quantity, total_paid))
+            cursor.execute(sql, (sale_id, product_name, product_id, product_price, product_quantity, total_paid, sale_date))
             connection.commit()
-            return jsonify({'message': 'POST SUCCESS. RECORD SAVED'})
-        except:
+            return jsonify({'message': 'POST SUCCESS. SALE RECORDED', 'sale_id': sale_id})
+        except Exception as e:
             connection.rollback()
-            return jsonify({'Error: There was a problem'})
+            return jsonify({'Error': str(e)})
+        # finally:
+        #     connection.close()
 
     def delete(self):
         data = request.json
         sale_id = data['sale_id']
-        connection = pymysql.connect(host='localhost', user='root', password='',database='pos1')
+        connection = pymysql.connect(host='localhost', user='root', password='', database='pos1')
         cursor = connection.cursor()
-        sql = "delete from sale where sale_id = %s"
+        sql = "DELETE FROM sale WHERE sale_id = %s"
         try:
-            cursor.execute(sql, (sale_id))
+            cursor.execute(sql, (sale_id,))
             connection.commit()
             return jsonify({'message': 'DELETE SUCCESS'})
         except:
             connection.rollback()
             return jsonify({'message': 'DELETE FAILED'})
+        finally:
+            connection.close()
 
     def put(self):
         data = request.json
         sale_id = data['sale_id']
         product_quantity = data['product_quantity']
-        connection = pymysql.connect(host='localhost', user='root', password='',database='pos1')
+        connection = pymysql.connect(host='localhost', user='root', password='', database='pos1')
         cursor = connection.cursor()
-        sql = "update sale SET product_quantity = %s where sale_id =%s"
+        sql = "UPDATE sale SET product_quantity = %s WHERE sale_id = %s"
         try:
             cursor.execute(sql, (product_quantity, sale_id))
             connection.commit()
@@ -189,7 +307,9 @@ class Sale(Resource):
         except:
             connection.rollback()
             return jsonify({'message': 'UPDATE FAILED'})
-api.add_resource(Sale, '/sales')
+        finally:
+            connection.close()
+api.add_resource(Sales, '/saless')
 
 class Transaction(Resource):
 

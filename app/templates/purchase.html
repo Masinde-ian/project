@@ -3,7 +3,7 @@
 <div id="purchase">
     <div>
         <div>
-            <form action="" method="POST" id="sale-form">
+            <form action="" method="POST" id="purchase-form">
                 <div class="label2">
                     <label for="product-name">Product Name:</label>
                     <input type="text" id="product-name">
@@ -12,10 +12,10 @@
                     <label for="quantity">Quantity:</label>
                     <input type="number" id="quantity">
                 </div>
-                <!-- <div class="label2">
+                <div class="label2">
                     <label for="unit-price">Unit Price:</label>
                     <input type="number" id="unit-price">
-                </div>   -->
+                </div>  
                 <button type="submit">Save</button>
             </form>
         </div>
@@ -32,23 +32,23 @@
                             <th>Date Ordered</th>
                           </tr>
                     </thead>
-                    <tbody id="saleList"></tbody>
+                    <tbody id="orderList"></tbody>
                 </table>
             </div>
         </div>
     </div>
     <div></div>
     <script>
-        document.getElementById('sale-form').addEventListener('submit', function(event) {
+        document.getElementById('purchase-form').addEventListener('submit', function(event) {
                 event.preventDefault(); // Prevent the default form submission
         
                 const product_name = document.getElementById('product-name').value;
-                const product_quantity = parseInt(document.getElementById('quantity').value);
-                // const unit_price = parseInt(document.getElementById('unit-price').value);
+                const quantity = parseInt(document.getElementById('quantity').value);
+                const unit_price = parseInt(document.getElementById('unit-price').value);
         
-                const data = { product_name, product_quantity };
+                const data = { product_name, quantity, unit_price };
         
-                fetch('http://127.0.0.1:5000/saless', {
+                fetch('http://127.0.0.1:5000/orders', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -68,7 +68,7 @@
             });
         
             function loadOrders() {
-                fetch('http://127.0.0.1:5000/saless')
+                fetch('http://127.0.0.1:5000/orders')
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Network response was not ok');
@@ -76,31 +76,31 @@
                         return response.json();
                     })
                     .then(data => {
-                        const saleList = document.getElementById('saleList');
-                        saleList.innerHTML = ''; // Clear the existing category list
+                        const orderList = document.getElementById('orderList');
+                        orderList.innerHTML = ''; // Clear the existing category list
         
                         if (data.length === 0) {
-                            saleList.innerHTML = '<tr><td colspan="2">No sales found.</td></tr>';
+                            orderList.innerHTML = '<tr><td colspan="2">No categories found.</td></tr>';
                             return;
                         }
         
-                        data.forEach(sale => {
+                        data.forEach(order => {
                             const row = document.createElement('tr');
                             row.innerHTML = `
-                                <td>${sale.sale_id}</td>
-                                <td>${sale.product_name}</td>
-                                <td>${sale.product_quantity}</td>
-                                <td>${sale.product_price}</td>
-                                <td>${sale.total_paid}</td>
-                                <td>${sale.sale_date}</td>
+                                <td>${order.purchase_id}</td>
+                                <td>${order.product_name}</td>
+                                <td>${order.quantity}</td>
+                                <td>${order.unit_price}</td>
+                                <td>${order.total_price}</td>
+                                <td>${order.date_ordered}</td>
                             `;
-                            saleList.appendChild(row);
+                            orderList.appendChild(row);
                         });
                     })
                     .catch((error) => {
                         console.error('Error:', error);
-                        const categoryList = document.getElementById('saleList');
-                        categoryList.innerHTML = '<tr><td colspan="2">Error loading sales.</td></tr>';
+                        const categoryList = document.getElementById('orderList');
+                        categoryList.innerHTML = '<tr><td colspan="2">Error loading categories.</td></tr>';
                     });
             }
         
